@@ -13,9 +13,35 @@ Set-Item -Path Function:ga -Value {git add .}
 Set-Item -Path Function:gpush -Value {git push}
 Set-Item -Path Function:gpull -Value {git pull}
 Set-Item -Path Function:gcl -Value {git clone $args}
-Set-Item -Path Function:Install-Dotfiles -Value { irm "https://raw.githubusercontent.com/AtomicTenebris/dotfiles/main/bootstrap.ps1" | iex}
+Set-Item -Path Function:Install-Dotfiles -Value {
+    param(
+        [string[]]$Modules = @(
+            'prerequisites'
+            'winget'
+            'install-winget-package'
+            'scoop'
+            'install-scoop-package'
+            'powershell'
+            'starship'
+            'terminal'
+            'vscode'
+            'neovim'
+        )
+    )
 
-function touch($File) {
+    $workspace = Join-Path $HOME "workspace"
+    $repoPath = Join-Path $workspace "dotfiles"
+
+    if (Test-Path $repoPath) {
+        git -C $repoPath pull
+    }
+    else {
+        git clone https://github.com/AtomicTenebris/dotfiles.git $repoPath
+    }
+
+    & (Join-Path $repoPath "install.ps1") -Modules $Modules
+}
+  function touch($File) {
     if (test-Path $File) {
         (Get-Item $File).LastWriteTime = Get-Date
     }
@@ -112,3 +138,5 @@ ${dim}────────────────────────�
 ${dim}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${reset}
 "@
 }
+
+Invoke-Expression (&starship init powershell)
