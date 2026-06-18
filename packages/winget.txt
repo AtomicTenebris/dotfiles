@@ -1,7 +1,7 @@
 Git.Git
-Microsoft.Powershell
+Microsoft.PowerShell
 Microsoft.WindowsTerminal
-Micorosft.VisualStudioCode.Insiders
+Microsoft.VisualStudioCode.Insiders
 Microsoft.PowerToys
 Starship.Starship
 VideoLAN.VLC
@@ -11,5 +11,5 @@ Brave.Brave
 Foxit.FoxitReader
 Docker.DockerDesktop
 Obsidian.Obsidian
-RevoUninstaller.
-tailscale.tailscale
+RevoUninstaller.RevoUninstaller
+Tailscale.Tailscale
