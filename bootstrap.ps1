@@ -15,7 +15,7 @@ $ZipFile  = "$TempRoot.zip"
 try {
     Write-Host "Downloading dotfiles..." -ForegroundColor Cyan
 
-    $ArchiveUrl = "https://github.com/$RepoOwner/$RepoName/archive/refs/heads/$Branch.zip"
+    $ArchiveUrl = "https://github.com/$RepoOwner/$RepoName/archive/refs/heads/main.zip"
 
     $maxRetries = 3
     $success = $false
