@@ -5,6 +5,8 @@ param(
     [string]$Branch = 'main'
 )
 
+Set-ExecutionPolicy Bypass -Scope Process -Force
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
@@ -39,10 +41,9 @@ try {
         -DestinationPath $TempRoot `
         -Force
 
-    $RepoRoot = Get-ChildItem `
-        -Path $TempRoot `
-        -Directory |
-        Select-Object -First 1
+    $RepoRoot = Get-ChildItem -Path $TempRoot -Directory | Where-Object {
+    Test-Path (Join-Path $_.FullName "install.ps1")
+} | Select-Object -First 1
 
     if (-not $RepoRoot) {
         throw "Failed to locate extracted repository."
