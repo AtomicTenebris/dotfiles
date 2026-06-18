@@ -17,16 +17,16 @@ $PwshProfile   = Join-Path $PwshDir "Microsoft.PowerShell_profile.ps1"
 $LegacyProfile = Join-Path $LegacyDir "profile.ps1"
 
 # Source of truth (user config)
-$ConfigRoot     = Join-Path $HOME ".config\powershell"
-$UserProfile    = Join-Path $ConfigRoot "user_profile.ps1"
+$ConfigRoot  = Join-Path $HOME ".config\powershell"
+$UserProfile = Join-Path $ConfigRoot "user_profile.ps1"
 
 # -------------------------------------------------
-# Ensure directories exist (CRITICAL FIX)
+# Ensure directories exist
 # -------------------------------------------------
 
-foreach ($dir in @($PwshDir, $LegacyDir, $ConfigRoot)) {
-    if (-not (Test-Path $dir)) {
-        New-Item -ItemType Directory -Path $dir -Force | Out-Null
+foreach ($Dir in @($PwshDir, $LegacyDir, $ConfigRoot)) {
+    if (-not (Test-Path $Dir)) {
+        New-Item -ItemType Directory -Path $Dir -Force | Out-Null
     }
 }
 
@@ -39,7 +39,7 @@ if (-not (Test-Path $UserProfile)) {
 }
 
 # -------------------------------------------------
-# Backup existing files (safe)
+# Backup existing files
 # -------------------------------------------------
 
 $BackupDir = New-BackupDirectory "powershell"
@@ -57,7 +57,7 @@ if (Test-Path $LegacyProfile) {
 }
 
 # -------------------------------------------------
-# Deploy bootstrap loader (same for both shells)
+# Deploy bootstrap loader
 # -------------------------------------------------
 
 $Bootstrap = @'
@@ -78,7 +78,7 @@ Set-Content -Path $PwshProfile -Value $Bootstrap -Force
 Set-Content -Path $LegacyProfile -Value $Bootstrap -Force
 
 # -------------------------------------------------
-# Ensure user profile is deployed
+# Deploy user profile
 # -------------------------------------------------
 
 Copy-Item `
@@ -87,39 +87,56 @@ Copy-Item `
     -Force
 
 # -------------------------------------------------
-# Install / update modules
+# Install PowerShell modules using pwsh
 # -------------------------------------------------
 
 $ModuleFile = Join-Path $Global:DotfilesRoot "configs\powershell\modules.txt"
+
+if (-not (Test-Path $ModuleFile)) {
+    throw "Module list not found: $ModuleFile"
+}
 
 $Modules = Get-Content $ModuleFile | Where-Object {
     $_.Trim() -and -not $_.StartsWith('#')
 }
 
+$Pwsh = Get-Command pwsh -ErrorAction SilentlyContinue
+
+if (-not $Pwsh) {
+    throw "PowerShell 7 (pwsh) is not installed."
+}
+
 foreach ($Module in $Modules) {
 
-    if (-not (Get-InstalledModule -Name $Module -ErrorAction SilentlyContinue)) {
+    Write-Host "[CHECK] $Module" -ForegroundColor Cyan
 
-        Write-Host "[INSTALL] $Module" -ForegroundColor Yellow
+    $Installed = & $Pwsh.Source `
+        -NoProfile `
+        -NonInteractive `
+        -Command "if (Get-Module -ListAvailable -Name '$Module') { 'true' }"
 
-Install-Module `
-    -Name $Module `
-    -Scope CurrentUser `
-    -Force `
-    -AllowClobber `
-    -Confirm:$false `
-    -SkipPublisherCheck `
-    -ErrorAction Stop
+    if ($Installed -eq 'true') {
+        Write-Host "[SKIP] $Module already installed" -ForegroundColor DarkGray
+        continue
     }
-    else {
 
-        Write-Host "[UPDATE] $Module" -ForegroundColor Cyan
+    Write-Host "[INSTALL] $Module" -ForegroundColor Yellow
 
-        Update-Module `
-            -Name $Module `
-            -Force `
-            -ErrorAction SilentlyContinue
-    }
+    & $Pwsh.Source `
+        -NoProfile `
+        -NonInteractive `
+        -Command "
+            Install-Module `
+                -Name '$Module' `
+                -Scope CurrentUser `
+                -Repository PSGallery `
+                -Force `
+                -AllowClobber `
+                -SkipPublisherCheck `
+                -Confirm:`$false
+        "
+
+    Write-Host "[DONE] $Module" -ForegroundColor Green
 }
 
 Write-Host "[SUCCESS] PowerShell configured (pwsh + WindowsPowerShell)" -ForegroundColor Green
