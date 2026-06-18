@@ -1,5 +1,5 @@
 #Requires -Version 5.1
-
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 [CmdletBinding()]
 param(
     [string]$Branch = 'main'
@@ -30,9 +30,25 @@ try {
         "$Branch.zip"
     ) -join '/'
 
-    Invoke-WebRequest `
-        -Uri $ArchiveUrl `
-        -OutFile $ZipFile
+$maxRetries = 3
+$success = $false
+
+for ($i = 1; $i -le $maxRetries; $i++) {
+    try {
+        Write-Host "Downloading (attempt $i/$maxRetries)..." -ForegroundColor Cyan
+        Invoke-WebRequest -Uri $ArchiveUrl -OutFile $ZipFile -UseBasicParsing
+        $success = $true
+        break
+    }
+    catch {
+        Write-Warning "Download failed: $($_.Exception.Message)"
+        Start-Sleep -Seconds 2
+    }
+}
+
+if (-not $success) {
+    throw "Failed to download repository after $maxRetries attempts."
+}
 
     Write-Host "Extracting archive..." -ForegroundColor Cyan
 
