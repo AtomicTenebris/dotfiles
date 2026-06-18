@@ -7,39 +7,62 @@ Write-ModuleHeader "Post Install Configuration"
 # WSL2
 # -----------------------------------------------------------------------------
 
-Write-Host "[INFO] Configuring WSL2..." -ForegroundColor Yellow
+Write-Host "[INFO] Configuring WSL2..." `
+    -ForegroundColor Yellow
 
-Enable-WindowsOptionalFeature `
-    -Online `
-    -FeatureName Microsoft-Windows-Subsystem-Linux `
-    -NoRestart `
-    -All
+$Features = @(
+    "Microsoft-Windows-Subsystem-Linux"
+    "VirtualMachinePlatform"
+    "Microsoft-Hyper-V-All"
+)
 
-Enable-WindowsOptionalFeature `
-    -Online `
-    -FeatureName VirtualMachinePlatform `
-    -NoRestart `
-    -All
+foreach ($Feature in $Features) {
 
-Enable-WindowsOptionalFeature `
-    -Online `
-    -FeatureName Microsoft-Hyper-V-All `
-    -NoRestart `
-    -All
+    Write-Host "[ENABLE] $Feature"
 
-wsl --set-default-version 2
+    dism.exe `
+        /Online `
+        /Enable-Feature `
+        "/FeatureName:$Feature" `
+        /All `
+        /NoRestart | Out-Null
+}
+
+try {
+
+    wsl --install --no-distribution 2>$null
+
+}
+catch {
+}
+
+try {
+
+    wsl --set-default-version 2 | Out-Null
+
+}
+catch {
+
+    Write-Host "[WARN] Unable to set WSL default version." `
+        -ForegroundColor Yellow
+}
+
+Write-Host "[SUCCESS] WSL2 configured" `
+    -ForegroundColor Green
 
 # -----------------------------------------------------------------------------
 # OneDrive
 # -----------------------------------------------------------------------------
 
-Write-Host "[REMOVE] OneDrive" -ForegroundColor Yellow
+Write-Host "[REMOVE] OneDrive" `
+    -ForegroundColor Yellow
 
-Get-Process OneDrive `
+Get-Process `
+    OneDrive `
     -ErrorAction SilentlyContinue |
     Stop-Process `
-    -Force `
-    -ErrorAction SilentlyContinue
+        -Force `
+        -ErrorAction SilentlyContinue
 
 $OneDriveInstallers = @(
     "$env:SystemRoot\SysWOW64\OneDriveSetup.exe"
@@ -76,8 +99,19 @@ foreach ($Path in $OneDrivePaths) {
     }
 }
 
+reg delete `
+    "HKCR\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}" `
+    /f 2>$null
+
+reg delete `
+    "HKCR\Wow6432Node\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}" `
+    /f 2>$null
+
+Write-Host "[SUCCESS] OneDrive removed" `
+    -ForegroundColor Green
+
 # -----------------------------------------------------------------------------
-# Consumer Apps
+# Consumer Applications
 # -----------------------------------------------------------------------------
 
 Write-Host "[REMOVE] Microsoft Consumer Apps" `
@@ -101,6 +135,13 @@ $Packages = @(
     "*People*"
     "*MixedReality*"
     "*MicrosoftStickyNotes*"
+    "*Microsoft.BingWeather*"
+    "*Microsoft.WindowsAlarms*"
+    "*Microsoft.WindowsSoundRecorder*"
+    "*Microsoft.PowerAutomateDesktop*"
+    "*Microsoft.OutlookForWindows*"
+    "*MicrosoftCorporationII.MicrosoftFamily*"
+    "*Microsoft.549981C3F5F10*"
 )
 
 foreach ($Package in $Packages) {
@@ -123,8 +164,11 @@ foreach ($Package in $Packages) {
         } |
         Remove-AppxProvisionedPackage `
             -Online `
-            -ErrorAction SilentlyContinue
+            -ErrorAction SilentlyContinue | Out-Null
 }
+
+Write-Host "[SUCCESS] Consumer applications removed" `
+    -ForegroundColor Green
 
 # -----------------------------------------------------------------------------
 # Copilot
@@ -174,6 +218,14 @@ if ($EdgeInstaller) {
         --system-level `
         --force-uninstall `
         --verbose-logging
+
+    Write-Host "[SUCCESS] Edge uninstall executed" `
+        -ForegroundColor Green
+}
+else {
+
+    Write-Host "[SKIP] Edge installer not found" `
+        -ForegroundColor Cyan
 }
 
 # -----------------------------------------------------------------------------
@@ -195,7 +247,7 @@ foreach ($Service in $EdgeServices) {
 }
 
 # -----------------------------------------------------------------------------
-# Edge Tasks
+# Edge Scheduled Tasks
 # -----------------------------------------------------------------------------
 
 Get-ScheduledTask `
@@ -228,6 +280,9 @@ foreach ($Path in $EdgePaths) {
     }
 }
 
+Write-Host "[SUCCESS] Edge cleanup completed" `
+    -ForegroundColor Green
+
 # -----------------------------------------------------------------------------
 # Complete
 # -----------------------------------------------------------------------------
@@ -238,5 +293,6 @@ Write-Host "Post Install Complete" `
     -ForegroundColor Green
 Write-Host "========================================"
 Write-Host ""
+
 Write-Host "[INFO] Reboot required." `
     -ForegroundColor Yellow
