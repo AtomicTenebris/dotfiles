@@ -29,20 +29,15 @@ foreach ($Feature in $Features) {
 }
 
 try {
-
     wsl --install --no-distribution 2>$null
-
 }
 catch {
 }
 
 try {
-
     wsl --set-default-version 2 | Out-Null
-
 }
 catch {
-
     Write-Host "[WARN] Unable to set WSL default version." `
         -ForegroundColor Yellow
 }
@@ -171,34 +166,9 @@ foreach ($Package in $Packages) {
                 -ForegroundColor Yellow
         }
     }
-
-    $ProvisionedPackages = Get-AppxProvisionedPackage `
-        -Online |
-        Where-Object {
-            $_.DisplayName -like $Package
-        }
-
-    foreach ($Provisioned in $ProvisionedPackages) {
-
-        try {
-
-            Remove-AppxProvisionedPackage `
-                -Online `
-                -PackageName $Provisioned.PackageName `
-                -ErrorAction Stop | Out-Null
-
-            Write-Host "  [SUCCESS] $($Provisioned.DisplayName)" `
-                -ForegroundColor Green
-        }
-        catch {
-
-            Write-Host "  [SKIP] $($Provisioned.DisplayName)" `
-                -ForegroundColor Yellow
-        }
-    }
 }
 
-Write-Host "[SUCCESS] Consumer applications removed" `
+Write-Host "[SUCCESS] Consumer applications processed" `
     -ForegroundColor Green
 
 # -----------------------------------------------------------------------------
@@ -244,14 +214,22 @@ $EdgeInstaller = Get-ChildItem `
 
 if ($EdgeInstaller) {
 
-    & $EdgeInstaller.FullName `
-        --uninstall `
-        --system-level `
-        --force-uninstall `
-        --verbose-logging
+    try {
 
-    Write-Host "[SUCCESS] Edge uninstall executed" `
-        -ForegroundColor Green
+        & $EdgeInstaller.FullName `
+            --uninstall `
+            --system-level `
+            --force-uninstall `
+            --verbose-logging
+
+        Write-Host "[SUCCESS] Edge uninstall executed" `
+            -ForegroundColor Green
+    }
+    catch {
+
+        Write-Host "[SKIP] Edge uninstall failed" `
+            -ForegroundColor Yellow
+    }
 }
 else {
 
