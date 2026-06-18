@@ -82,37 +82,54 @@ $env:Path = [System.Environment]::GetEnvironmentVariable(
 
 Write-Host "[SUUCESS] PATH refreshed" -ForegroundColor Green
 
-Write-ModuleHeader "Configure NuGet Provider (PowerShellGet)"
+Write-ModuleHeader "Configure NuGet + PowerShellGet (Fully Silent)"
 
-# Ensure TLS 1.2 (required for PSGallery on fresh Windows)
+# Force TLS 1.2 (required for PSGallery bootstrap)
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-# Install NuGet provider silently (NO PROMPTS)
-if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
+# -----------------------------
+# STEP 1: Pre-register PSGallery WITHOUT triggers
+# -----------------------------
 
-    Write-Host "[INFO] Installing NuGet provider..." -ForegroundColor Yellow
+if (-not (Get-PSRepository -Name PSGallery -ErrorAction SilentlyContinue)) {
+    Register-PSRepository `
+        -Default `
+        -InstallationPolicy Trusted `
+        -ErrorAction SilentlyContinue | Out-Null
+}
 
+Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+
+# -----------------------------
+# STEP 2: Pre-install NuGet provider (CRITICAL FIX)
+# -----------------------------
+
+$nuget = Get-PackageProvider -Name NuGet -ListAvailable -ErrorAction SilentlyContinue
+
+if (-not $nuget) {
+
+    Write-Host "[INFO] Preloading NuGet provider..." -ForegroundColor Yellow
+
+    # This forces download WITHOUT PowerShellGet triggering interactive fallback
     Install-PackageProvider `
         -Name NuGet `
-        -MinimumVersion 2.8.5.201 `
+        -MinimumVersion 2.8.5.208 `
         -Force `
         -Scope CurrentUser `
         -Confirm:$false `
+        -ForceBootstrap `
         -ErrorAction Stop | Out-Null
 
     Write-Host "[SUCCESS] NuGet provider installed" -ForegroundColor Green
 }
 else {
-    Write-Host "[SUCCESS] NuGet provider already exists" -ForegroundColor Green
+    Write-Host "[SUCCESS] NuGet already available" -ForegroundColor Green
 }
 
-# Trust PSGallery to prevent Install-Module prompts
-Set-PSRepository `
-    -Name PSGallery `
-    -InstallationPolicy Trusted `
-    -ErrorAction SilentlyContinue
+# -----------------------------
+# STEP 3: Pre-warm PowerShellGet (prevents lazy prompt later)
+# -----------------------------
 
-Write-Host "[SUCCESS] PowerShell Gallery trusted" -ForegroundColor Green
-
+Import-PackageProvider -Name NuGet -Force -ErrorAction SilentlyContinue
 
 Write-Host "Prerequisites checks completed" -ForegroundColor Green
