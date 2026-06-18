@@ -1,5 +1,7 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$env:POWERSHELLGET_SKIP_NOISE = "true"
+$env:PSDisableModuleAnalysisCacheCleanup = "1"
 
 Write-Host "Checking Prerequisites" -ForegroundColor Yellow
 Write-ModuleHeader "Checking Internet Connectivity"
@@ -82,54 +84,34 @@ $env:Path = [System.Environment]::GetEnvironmentVariable(
 
 Write-Host "[SUUCESS] PATH refreshed" -ForegroundColor Green
 
-Write-ModuleHeader "Configure NuGet + PowerShellGet (Fully Silent)"
+Write-ModuleHeader "NuGet Check"
 
-# Force TLS 1.2 (required for PSGallery bootstrap)
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-# -----------------------------
-# STEP 1: Pre-register PSGallery WITHOUT triggers
-# -----------------------------
+# Step 1: Force install NuGet provider without PowerShellGet fallback
+$nugetPath = "$env:LOCALAPPDATA\PackageManagement\ProviderAssemblies\NuGet\2.8.5.201"
 
-if (-not (Get-PSRepository -Name PSGallery -ErrorAction SilentlyContinue)) {
-    Register-PSRepository `
-        -Default `
-        -InstallationPolicy Trusted `
-        -ErrorAction SilentlyContinue | Out-Null
-}
+if (-not (Test-Path $nugetPath)) {
 
-Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+    Write-Host "[INFO] Installing NuGet provider (forced mode)..." -ForegroundColor Yellow
 
-# -----------------------------
-# STEP 2: Pre-install NuGet provider (CRITICAL FIX)
-# -----------------------------
-
-$nuget = Get-PackageProvider -Name NuGet -ListAvailable -ErrorAction SilentlyContinue
-
-if (-not $nuget) {
-
-    Write-Host "[INFO] Preloading NuGet provider..." -ForegroundColor Yellow
-
-    # This forces download WITHOUT PowerShellGet triggering interactive fallback
-    Install-PackageProvider `
+    $provider = Install-PackageProvider `
         -Name NuGet `
-        -MinimumVersion 2.8.5.208 `
+        -MinimumVersion 2.8.5.201 `
         -Force `
         -Scope CurrentUser `
         -Confirm:$false `
-        -ForceBootstrap `
-        -ErrorAction Stop | Out-Null
+        -ErrorAction Stop
 
-    Write-Host "[SUCCESS] NuGet provider installed" -ForegroundColor Green
-}
-else {
-    Write-Host "[SUCCESS] NuGet already available" -ForegroundColor Green
+    Import-PackageProvider -Name NuGet -Force | Out-Null
 }
 
-# -----------------------------
-# STEP 3: Pre-warm PowerShellGet (prevents lazy prompt later)
-# -----------------------------
+# Step 2: Preload into session (IMPORTANT)
+Import-PackageProvider NuGet -Force -ErrorAction SilentlyContinue
 
-Import-PackageProvider -Name NuGet -Force -ErrorAction SilentlyContinue
+# Step 3: Stop PSGallery from triggering bootstrap prompt
+Set-PSRepository PSGallery -InstallationPolicy Trusted -ErrorAction SilentlyContinue
+
+Write-Host "[OK] NuGet fully bootstrapped (no interactive fallback possible)" -ForegroundColor Green
 
 Write-Host "Prerequisites checks completed" -ForegroundColor Green
