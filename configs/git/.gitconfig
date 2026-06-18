@@ -1,0 +1,53 @@
+[init]
+    defaultBranch = main
+
+[core]
+    editor = nvim
+    autocrlf = true
+    filemode = false
+    pager = less -FRX
+
+[pull]
+    rebase = false
+
+[push]
+    autoSetupRemote = true
+    default = current
+
+[fetch]
+    prune = true
+
+[merge]
+    conflictstyle = zdiff3
+
+[diff]
+    colorMoved = default
+
+[rerere]
+    enabled = true
+
+[credential]
+    helper = manager
+
+[alias]
+    st = status
+    sta = status --short
+    co = checkout
+    sw = switch
+    br = branch
+    ci = commit
+    ca = commit --amend
+    lg = log --oneline --graph --decorate --all
+    last = log -1 HEAD
+    unstage = restore --staged .
+    undo = reset --soft HEAD~1
+    df = diff
+    dff = diff --word-diff
+    aa = add .
+    cm = commit -m
+    pl = pull
+    ps = push
+    rv = remote -v
+
+[color]
+    ui = auto

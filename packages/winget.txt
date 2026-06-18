@@ -1,0 +1,15 @@
+Git.Git
+Microsoft.Powershell
+Microsoft.WindowsTerminal
+Micorosft.VisualStudioCode.Insiders
+Microsoft.PowerToys
+Starship.Starship
+VideoLAN.VLC
+Proton.ProtonDrive
+Spotify.Spotify
+Brave.Brave
+Foxit.FoxitReader
+Docker.DockerDesktop
+Obsidian.Obsidian
+RevoUninstaller.
+tailscale.tailscale

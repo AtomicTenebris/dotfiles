@@ -1,0 +1,4 @@
+eamodio.gitlens
+ms-vscode.powershell
+rust-lang.rust-analyzer
+esbenp.prettier-vscode
