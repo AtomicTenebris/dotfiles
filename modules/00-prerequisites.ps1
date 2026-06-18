@@ -8,7 +8,7 @@ try {
   $null = Invoke-WebRequest `
     -Uri "https://microsoft.com" `
     -Method Head `
-    -TimeoutSec 10
+    -TimeoutSec 10 -UseBasicParsing
   Write-Host "[SUCCESS] Internet Connectivity" -ForegroundColor Green
 }
 catch {
