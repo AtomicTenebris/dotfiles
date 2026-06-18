@@ -16,3 +16,7 @@ adb
 lazygit
 btop
 jq
+spotify
+AnonymousPro-NF
+FiraCode-NF
+Hack-NF
