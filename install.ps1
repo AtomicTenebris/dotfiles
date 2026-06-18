@@ -1,40 +1,59 @@
 param (
-  [string[]]$Modules
+    [string[]]$Modules
 )
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-
 function Test-IsAdmin {
-  $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
-  $principal = [Security.Principal.WindowsPrincipal]::new($identity)
 
-  return $principal.IsInRole(
-    [Security.Principal.WindowsBuiltInRole]::Administrator
-  )
+    $Identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+
+    $Principal = [Security.Principal.WindowsPrincipal]::new(
+        $Identity
+    )
+
+    return $Principal.IsInRole(
+        [Security.Principal.WindowsBuiltInRole]::Administrator
+    )
 }
+
+# -----------------------------------------------------------------------------
+# Elevation
+# -----------------------------------------------------------------------------
 
 if (-not (Test-IsAdmin)) {
 
-  Write-Host "Requesting Administrator privileges..."
+    Write-Host "Requesting Administrator privileges..."
 
-  $shell = (Get-Process -Id $PID).Path
+    $Shell = (Get-Process -Id $PID).Path
 
-  $Arguments = @(
-    '-NoExit',
-    '-NoProfile',
-    '-ExecutionPolicy', 'Bypass',
-    '-File', "`"$PSCommandPath`""
-  )
+    $Arguments = @(
+        '-NoProfile'
+        '-ExecutionPolicy'
+        'Bypass'
+        '-File'
+        "`"$PSCommandPath`""
+    )
 
-  Start-Process `
-    -FilePath $shell `
-    -Verb RunAs `
-    -WorkingDirectory (Get-Location) `
-    -ArgumentList ($Arguments + $args)
-  
-  exit
+    if ($Modules) {
+
+        $Arguments += '-Modules'
+        $Arguments += ($Modules -join ',')
+    }
+
+    Start-Process `
+        -FilePath $Shell `
+        -Verb RunAs `
+        -WorkingDirectory (Get-Location) `
+        -ArgumentList $Arguments
+
+    exit
 }
+
+# -----------------------------------------------------------------------------
+# Helpers
+# -----------------------------------------------------------------------------
 
 $CommonHelpers = Join-Path `
     $PSScriptRoot `
@@ -46,66 +65,112 @@ if (-not (Test-Path $CommonHelpers)) {
 
 . $CommonHelpers
 
+# -----------------------------------------------------------------------------
+# Globals
+# -----------------------------------------------------------------------------
+
 $Global:DotfilesRoot = $PSScriptRoot
-$ModulePath = Join-Path $DotfilesRoot 'modules'
 
+$ModulePath = Join-Path `
+    $DotfilesRoot `
+    "modules"
+
+# -----------------------------------------------------------------------------
+# Header
+# -----------------------------------------------------------------------------
 
 Write-Host ""
+
 Write-Host "========================================"
-Write-Host "Dotfiles Installer" -ForegroundColor Yellow
-Write-Host "PowerShell $($PSVersionTable.PSVersion)" -ForegroundColor Red
-Write-Host "Running as Administrator" -ForegroundColor Green
+
+Write-Host `
+    "Dotfiles Installer" `
+    -ForegroundColor Yellow
+
+Write-Host `
+    "PowerShell $($PSVersionTable.PSVersion)" `
+    -ForegroundColor Cyan
+
+Write-Host `
+    "Running as Administrator" `
+    -ForegroundColor Green
+
 Write-Host "========================================"
+
 Write-Host ""
 
+# -----------------------------------------------------------------------------
+# Discover Modules
+# -----------------------------------------------------------------------------
 
 $ModuleFiles = Get-ChildItem `
-  -Path $ModulePath `
-  -Filter '*.ps1' `
-  -File | 
-Sort-Object Name
+    -Path $ModulePath `
+    -Filter "*.ps1" `
+    -File |
+    Sort-Object Name
+
+# -----------------------------------------------------------------------------
+# Filter Requested Modules
+# -----------------------------------------------------------------------------
 
 if ($Modules) {
 
-  $RequestedModules = $Modules | ForEach-Object {
-    $_.ToLower().Trim()
-  }
+    $RequestedModules = $Modules |
+        ForEach-Object {
+            $_.ToLower().Trim()
+        }
 
-  $ModuleFiles = $ModuleFiles | Where-Object {
+    $ModuleFiles = $ModuleFiles |
+        Where-Object {
 
-    $ModuleName = (
-      $_.BaseName `
-        -replace '^\d+[-_]?', ''
-    ).ToLower()
+            $ModuleName = (
+                $_.BaseName `
+                    -replace '^\d+[-_]?',''
+            ).ToLower()
 
-    $ModuleName -in $RequestedModules
-  }
+            $ModuleName -in $RequestedModules
+        }
 
-  if (-not $ModuleFiles) {
-    throw "No matching modules found."
-  }
+    if (-not $ModuleFiles) {
+
+        throw "No matching modules found."
+    }
 }
 
+# -----------------------------------------------------------------------------
+# Execute Modules
+# -----------------------------------------------------------------------------
 
-# Executing the files
 foreach ($Module in $ModuleFiles) {
 
+    Write-ModuleHeader `
+        "Running: $($Module.Name)"
 
+    try {
 
-  Write-ModuleHeader "Running: $($Module.Name)"
+        & $Module.FullName
 
-  try {
-    & $Module.FullName
+        Write-Host `
+            "[SUCCESS] $($Module.Name)" `
+            -ForegroundColor Green
+    }
+    catch {
 
-    Write-Host "[SUCCESS] $($Module.Name)"
-  }
-  catch {
-    Write-Host "[FAILED] $($Module.Name)"
-    throw
-  }
+        Write-Host `
+            "[FAILED] $($Module.Name)" `
+            -ForegroundColor Red
+
+        throw
+    }
 }
 
+# -----------------------------------------------------------------------------
+# Complete
+# -----------------------------------------------------------------------------
 
-Write-ModuleHeader "Installation Complete"
-Start-Sleep -Seconds 15
+Write-ModuleHeader `
+    "Installation Complete"
+
+Start-Sleep -Seconds 5
+
 Restart-Computer -Force
