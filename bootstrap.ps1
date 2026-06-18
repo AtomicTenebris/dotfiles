@@ -68,14 +68,12 @@ try {
     }
 }
 finally {
-    Remove-Item `
-        $ZipFile `
-        -Force `
-        -ErrorAction SilentlyContinue
+  finally {
+    Remove-Item $ZipFile -Force -ErrorAction SilentlyContinue
 
-    Remove-Item `
-        $TempRoot `
-        -Recurse `
-        -Force `
-        -ErrorAction SilentlyContinue
+    Write-Host ""
+    Write-Host "Repository extracted to:"
+    Write-Host "  $TempRoot"
+    Write-Host ""
+}
 }
