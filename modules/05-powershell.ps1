@@ -3,66 +3,121 @@ $ErrorActionPreference = 'Stop'
 
 Write-ModuleHeader "Configure Powershell"
 
-$PowerShellConfigDir = Join-Path $HOME ".config\powershell"
+# -------------------------------------------------
+# Paths
+# -------------------------------------------------
 
-if (-not (Test-Path $PowerShellConfigDir)) {
-  New-Item `
-    -ItemType Directory `
-    -Path $PowerShellConfigDir `
-    -Force | Out-Null
+$Documents = [Environment]::GetFolderPath("MyDocuments")
+
+# Bootstrap locations (Documents)
+$PwshDir   = Join-Path $Documents "PowerShell"
+$LegacyDir = Join-Path $Documents "WindowsPowerShell"
+
+$PwshProfile   = Join-Path $PwshDir "Microsoft.PowerShell_profile.ps1"
+$LegacyProfile = Join-Path $LegacyDir "profile.ps1"
+
+# Source of truth (user config)
+$ConfigRoot     = Join-Path $HOME ".config\powershell"
+$UserProfile    = Join-Path $ConfigRoot "user_profile.ps1"
+
+# -------------------------------------------------
+# Ensure directories exist (CRITICAL FIX)
+# -------------------------------------------------
+
+foreach ($dir in @($PwshDir, $LegacyDir, $ConfigRoot)) {
+    if (-not (Test-Path $dir)) {
+        New-Item -ItemType Directory -Path $dir -Force | Out-Null
+    }
 }
+
+# -------------------------------------------------
+# Ensure user profile exists
+# -------------------------------------------------
+
+if (-not (Test-Path $UserProfile)) {
+    New-Item -ItemType File -Path $UserProfile -Force | Out-Null
+}
+
+# -------------------------------------------------
+# Backup existing files (safe)
+# -------------------------------------------------
 
 $BackupDir = New-BackupDirectory "powershell"
 
-Backup-Item `
-    -Source $PROFILE.CurrentUserAllHosts `
-    -Destination (Join-Path $BackupDir "Microsoft.PowerShell_profile.ps1")
+if (Test-Path $PwshProfile) {
+    Backup-Item `
+        -Source $PwshProfile `
+        -Destination (Join-Path $BackupDir "Microsoft.PowerShell_profile.ps1")
+}
 
-Backup-Item `
-    -Source (Join-Path $HOME ".config\powershell\user_profile.ps1") `
-    -Destination (Join-Path $BackupDir "user_profile.ps1")
-   
-# Deploy profile bootstrap
+if (Test-Path $LegacyProfile) {
+    Backup-Item `
+        -Source $LegacyProfile `
+        -Destination (Join-Path $BackupDir "WindowsPowerShell_profile.ps1")
+}
+
+# -------------------------------------------------
+# Deploy bootstrap loader (same for both shells)
+# -------------------------------------------------
+
+$Bootstrap = @'
+$ConfigRoot = Join-Path $HOME ".config\powershell"
+$UserProfile = Join-Path $ConfigRoot "user_profile.ps1"
+
+if (Test-Path $UserProfile) {
+    try {
+        . $UserProfile
+    }
+    catch {
+        Write-Host "[WARN] Failed to load user_profile.ps1: $_" -ForegroundColor Yellow
+    }
+}
+'@
+
+Set-Content -Path $PwshProfile -Value $Bootstrap -Force
+Set-Content -Path $LegacyProfile -Value $Bootstrap -Force
+
+# -------------------------------------------------
+# Ensure user profile is deployed
+# -------------------------------------------------
+
 Copy-Item `
-  -Path (Join-Path $Global:DotfilesRoot "configs\powershell\Microsoft.PowerShell_profile.ps1") `
-  -Destination $PROFILE.CurrentUserAllHosts `
-  -Force
+    -Path (Join-Path $Global:DotfilesRoot "configs\powershell\user_profile.ps1") `
+    -Destination $UserProfile `
+    -Force
 
-# Deploy User Profile
-Copy-Item `
-  -Path (Join-Path $Global:DotfilesRoot "configs\powershell\user_profile.ps1") `
-  -Destination (Join-Path $PowerShellConfigDir "user_profile.ps1") `
-  -Force
+# -------------------------------------------------
+# Install / update modules
+# -------------------------------------------------
 
-$ModuleFile = Join-Path `
-  $Global:DotfilesRoot `
-  "configs\powershell\modules.txt"
+$ModuleFile = Join-Path $Global:DotfilesRoot "configs\powershell\modules.txt"
 
-$Modules = Get-Content $ModuleFile |
-Where-Object {
-  $_.Trim() -and -not $_.StartsWith('#')
+$Modules = Get-Content $ModuleFile | Where-Object {
+    $_.Trim() -and -not $_.StartsWith('#')
 }
 
 foreach ($Module in $Modules) {
-  if (-not (Get-InstalledModule -Name $Module -ErrorAction SilentlyContinue)) {
 
-    Write-Host "[INSTALL] $Module" -ForegroundColor Yellow
+    if (-not (Get-InstalledModule -Name $Module -ErrorAction SilentlyContinue)) {
 
-    Install-Module `
-      -Name $Module `
-      -Scope CurrentUser `
-      -Force `
-      -AllowClobber
-  }
-  else {
+        Write-Host "[INSTALL] $Module" -ForegroundColor Yellow
 
-    Write-Host "[UPDATE] $Module" -ForegroundColor Cyan
+        Install-Module `
+            -Name $Module `
+            -Scope CurrentUser `
+            -Force `
+            -AllowClobber `
+            -ErrorAction Stop
+    }
+    else {
 
-    Update-Module `
-      -Name $Module `
-      -Force `
-      -ErrorAction SilentlyContinue
-  }
+        Write-Host "[UPDATE] $Module" -ForegroundColor Cyan
+
+        Update-Module `
+            -Name $Module `
+            -Force `
+            -ErrorAction SilentlyContinue
+    }
 }
 
-Write-Host "[SUCCESS] Powershell Configured..." -ForegroundColor Green
+Write-Host "[SUCCESS] PowerShell configured (pwsh + WindowsPowerShell)" -ForegroundColor Green
