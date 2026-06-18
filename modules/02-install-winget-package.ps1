@@ -12,7 +12,7 @@ $Packages = Get-Content $PackageFile | Where-Object {
 }
 
 # Ensure Winget sources are fresh
-winget source update --quiet
+winget source update --disable-interactivity
 
 foreach ($Package in $Packages) {
 
