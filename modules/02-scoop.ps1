@@ -5,7 +5,6 @@ Write-ModuleHeader "Configure Scoop"
 
 if (-not (Get-Command scoop -ErrorAction SilentlyContinue)) {
   Write-Host "[INFO] Installing Scoop..."
-  Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
   Invoke-RestMethod get.scoop.sh | Invoke-Expression
 
 } 
