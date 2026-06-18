@@ -102,12 +102,14 @@ foreach ($Module in $Modules) {
 
         Write-Host "[INSTALL] $Module" -ForegroundColor Yellow
 
-        Install-Module `
-            -Name $Module `
-            -Scope CurrentUser `
-            -Force `
-            -AllowClobber `
-            -ErrorAction Stop
+Install-Module `
+    -Name $Module `
+    -Scope CurrentUser `
+    -Force `
+    -AllowClobber `
+    -Confirm:$false `
+    -SkipPublisherCheck `
+    -ErrorAction Stop
     }
     else {
 
