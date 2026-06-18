@@ -148,23 +148,54 @@ foreach ($Package in $Packages) {
 
     Write-Host "[REMOVE] $Package"
 
-    Get-AppxPackage `
+    $InstalledPackages = Get-AppxPackage `
         -AllUsers |
         Where-Object {
             $_.Name -like $Package
-        } |
-        Remove-AppxPackage `
-            -AllUsers `
-            -ErrorAction SilentlyContinue
+        }
 
-    Get-AppxProvisionedPackage `
+    foreach ($App in $InstalledPackages) {
+
+        try {
+
+            Remove-AppxPackage `
+                -Package $App.PackageFullName `
+                -ErrorAction Stop
+
+            Write-Host "  [SUCCESS] $($App.Name)" `
+                -ForegroundColor Green
+        }
+        catch {
+
+            Write-Host "  [SKIP] $($App.Name)" `
+                -ForegroundColor Yellow
+        }
+    }
+
+    $ProvisionedPackages = Get-AppxProvisionedPackage `
         -Online |
         Where-Object {
             $_.DisplayName -like $Package
-        } |
-        Remove-AppxProvisionedPackage `
-            -Online `
-            -ErrorAction SilentlyContinue | Out-Null
+        }
+
+    foreach ($Provisioned in $ProvisionedPackages) {
+
+        try {
+
+            Remove-AppxProvisionedPackage `
+                -Online `
+                -PackageName $Provisioned.PackageName `
+                -ErrorAction Stop | Out-Null
+
+            Write-Host "  [SUCCESS] $($Provisioned.DisplayName)" `
+                -ForegroundColor Green
+        }
+        catch {
+
+            Write-Host "  [SKIP] $($Provisioned.DisplayName)" `
+                -ForegroundColor Yellow
+        }
+    }
 }
 
 Write-Host "[SUCCESS] Consumer applications removed" `
