@@ -2,10 +2,6 @@
 
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-param(
-    [string]$Branch = 'main'
-)
-
 Set-ExecutionPolicy Bypass -Scope Process -Force
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
