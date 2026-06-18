@@ -5,7 +5,7 @@ Write-ModuleHeader "Configure Scoop"
 
 if (-not (Get-Command scoop -ErrorAction SilentlyContinue)) {
   Write-Host "[INFO] Installing Scoop..."
-  Invoke-RestMethod get.scoop.sh | Invoke-Expression -RunAsAdmin
+  iex "& {$(irm get.scoop.sh)} -RunAsAdmin"
 
 } 
 
