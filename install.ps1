@@ -107,4 +107,5 @@ foreach ($Module in $ModuleFiles) {
 
 
 Write-ModuleHeader "Installation Complete"
-Start-Sleep -Seconds 30
+Start-Sleep -Seconds 15
+Restart-Computer -Force
