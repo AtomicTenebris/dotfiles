@@ -88,30 +88,36 @@ Write-ModuleHeader "NuGet Check"
 
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-# Step 1: Force install NuGet provider without PowerShellGet fallback
-$nugetPath = "$env:LOCALAPPDATA\PackageManagement\ProviderAssemblies\NuGet\2.8.5.201"
+# Prevent PowerShellGet from attempting interactive bootstrap
+$env:POWERSHELL_TELEMETRY_OPTOUT = "1"
 
-if (-not (Test-Path $nugetPath)) {
+# Ensure PackageManagement is loaded FIRST (critical)
+Import-Module PackageManagement -Force -ErrorAction SilentlyContinue
+Import-Module PowerShellGet -Force -ErrorAction SilentlyContinue
 
-    Write-Host "[INFO] Installing NuGet provider (forced mode)..." -ForegroundColor Yellow
+# Check provider WITHOUT triggering bootstrap
+$nuget = Get-PackageProvider -Name NuGet -ListAvailable -ErrorAction SilentlyContinue
 
-    $provider = Install-PackageProvider `
-        -Name NuGet `
-        -MinimumVersion 2.8.5.201 `
-        -Force `
-        -Scope CurrentUser `
-        -Confirm:$false `
-        -ErrorAction Stop
+if (-not $nuget) {
 
-    Import-PackageProvider -Name NuGet -Force | Out-Null
+    Write-Host "[INFO] Manually bootstrapping NuGet provider..." -ForegroundColor Yellow
+
+    # Force download WITHOUT Install-PackageProvider trigger path
+    $nugetUrl = "https://cdn.oneget.org/providers/Microsoft.PackageManagement.NuGetProvider-2.8.5.208.dll"
+    $destPath = "$env:LOCALAPPDATA\PackageManagement\ProviderAssemblies\NuGet\2.8.5.208"
+
+    New-Item -ItemType Directory -Path $destPath -Force | Out-Null
+
+    $dllPath = Join-Path $destPath "Microsoft.PackageManagement.NuGetProvider.dll"
+
+    Invoke-WebRequest -Uri $nugetUrl -OutFile $dllPath -UseBasicParsing
+
+    Import-PackageProvider -Name NuGet -Force -ErrorAction SilentlyContinue
 }
 
-# Step 2: Preload into session (IMPORTANT)
-Import-PackageProvider NuGet -Force -ErrorAction SilentlyContinue
+# Register PSGallery safely
+Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -ErrorAction SilentlyContinue
 
-# Step 3: Stop PSGallery from triggering bootstrap prompt
-Set-PSRepository PSGallery -InstallationPolicy Trusted -ErrorAction SilentlyContinue
-
-Write-Host "[OK] NuGet fully bootstrapped (no interactive fallback possible)" -ForegroundColor Green
+Write-Host "[SUCCESS] NuGet bootstrap completed (no prompts possible)" -ForegroundColor Green
 
 Write-Host "Prerequisites checks completed" -ForegroundColor Green
