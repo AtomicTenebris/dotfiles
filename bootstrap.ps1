@@ -1,73 +1,59 @@
 #Requires -Version 5.1
+
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-[CmdletBinding()]
+
 param(
     [string]$Branch = 'main'
 )
 
 Set-ExecutionPolicy Bypass -Scope Process -Force
-
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $RepoOwner = 'AtomicTenebris'
 $RepoName  = 'dotfiles'
 
-$TempRoot = Join-Path `
-    $env:TEMP `
-    ("$RepoName-" + [guid]::NewGuid())
-
-$ZipFile = "$TempRoot.zip"
+$TempRoot = Join-Path $env:TEMP ("$RepoName-" + [guid]::NewGuid())
+$ZipFile  = "$TempRoot.zip"
 
 try {
     Write-Host "Downloading dotfiles..." -ForegroundColor Cyan
 
-    $ArchiveUrl = @(
-        'https://github.com'
-        $RepoOwner
-        $RepoName
-        'archive/refs/heads'
-        "$Branch.zip"
-    ) -join '/'
+    $ArchiveUrl = "https://github.com/$RepoOwner/$RepoName/archive/refs/heads/$Branch.zip"
 
-$maxRetries = 3
-$success = $false
+    $maxRetries = 3
+    $success = $false
 
-for ($i = 1; $i -le $maxRetries; $i++) {
-    try {
-        Write-Host "Downloading (attempt $i/$maxRetries)..." -ForegroundColor Cyan
-        Invoke-WebRequest -Uri $ArchiveUrl -OutFile $ZipFile -UseBasicParsing
-        $success = $true
-        break
+    for ($i = 1; $i -le $maxRetries; $i++) {
+        try {
+            Write-Host "Downloading (attempt $i/$maxRetries)..." -ForegroundColor Cyan
+            Invoke-WebRequest -Uri $ArchiveUrl -OutFile $ZipFile -UseBasicParsing
+            $success = $true
+            break
+        }
+        catch {
+            Write-Warning $_.Exception.Message
+            Start-Sleep -Seconds 2
+        }
     }
-    catch {
-        Write-Warning "Download failed: $($_.Exception.Message)"
-        Start-Sleep -Seconds 2
-    }
-}
 
-if (-not $success) {
-    throw "Failed to download repository after $maxRetries attempts."
-}
+    if (-not $success) {
+        throw "Failed to download repository after $maxRetries attempts."
+    }
 
     Write-Host "Extracting archive..." -ForegroundColor Cyan
 
-    Expand-Archive `
-        -Path $ZipFile `
-        -DestinationPath $TempRoot `
-        -Force
+    Expand-Archive -Path $ZipFile -DestinationPath $TempRoot -Force
 
     $RepoRoot = Get-ChildItem -Path $TempRoot -Directory | Where-Object {
-    Test-Path (Join-Path $_.FullName "install.ps1")
-} | Select-Object -First 1
+        Test-Path (Join-Path $_.FullName "install.ps1")
+    } | Select-Object -First 1
 
     if (-not $RepoRoot) {
         throw "Failed to locate extracted repository."
     }
 
-    $InstallScript = Join-Path `
-        $RepoRoot.FullName `
-        'install.ps1'
+    $InstallScript = Join-Path $RepoRoot.FullName "install.ps1"
 
     if (-not (Test-Path $InstallScript)) {
         throw "install.ps1 not found."
@@ -76,7 +62,6 @@ if (-not $success) {
     Write-Host "Launching installer..." -ForegroundColor Green
 
     Push-Location $RepoRoot.FullName
-
     try {
         & $InstallScript
     }
@@ -84,7 +69,7 @@ if (-not $success) {
         Pop-Location
     }
 }
-  finally {
+finally {
     Remove-Item $ZipFile -Force -ErrorAction SilentlyContinue
 
     Write-Host ""
