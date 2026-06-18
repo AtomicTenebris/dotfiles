@@ -67,7 +67,6 @@ try {
         Pop-Location
     }
 }
-finally {
   finally {
     Remove-Item $ZipFile -Force -ErrorAction SilentlyContinue
 
@@ -75,5 +74,4 @@ finally {
     Write-Host "Repository extracted to:"
     Write-Host "  $TempRoot"
     Write-Host ""
-}
 }
