@@ -1,0 +1,285 @@
+palette = "catppuccin_mocha"
+
+[palettes.catppuccin_mocha]
+rosewater = "#f5e0dc"
+flamingo = "#f2cdcd"
+pink = "#f5c2e7"
+mauve = "#cba6f7"
+red = "#f38ba8"
+maroon = "#eba0ac"
+peach = "#fab387"
+yellow = "#f9e2af"
+green = "#a6e3a1"
+teal = "#94e2d5"
+sky = "#89dceb"
+sapphire = "#74c7ec"
+blue = "#89b4fa"
+lavender = "#b4befe"
+text = "#cdd6f4"
+subtext1 = "#bac2de"
+subtext0 = "#a6adc8"
+overlay2 = "#9399b2"
+overlay1 = "#7f849c"
+overlay0 = "#6c7086"
+surface2 = "#585b70"
+surface1 = "#45475a"
+surface0 = "#313244"
+base = "#1e1e2e"
+mantle = "#181825"
+crust = "#11111b"
+
+[palettes.solarized_osaka]
+
+base      = "#00141A"
+mantle    = "#062329"
+crust     = "#00141A"
+surface0  = "#062329"
+surface1  = "#1C3A46"
+surface2  = "#657B83"
+
+overlay0  = "#70858D"
+overlay1  = "#8A9A9C"
+overlay2  = "#AEB6B6"
+
+subtext0  = "#8A9A9C"
+subtext1  = "#AEB6B6"
+text      = "#FDF6E3"
+
+red       = "#D13C32"
+maroon    = "#AA2E25"
+
+peach     = "#F26A2E"
+yellow    = "#F0C24B"
+
+green     = "#B7E34A"
+teal      = "#6CC8BE"
+
+sky       = "#639FD6"
+sapphire  = "#4F86BD"
+blue      = "#3E6C99"
+
+mauve     = "#8E93CF"
+lavender  = "#B0B3D9"
+
+pink      = "#D05A96"
+flamingo  = "#E35A4F"
+rosewater = "#E49A94"
+
+## FIRST LINE/ROW: Info & Status
+[username]
+format = "[힐러](bold mauve) @ "
+show_always = true
+style_root = "bold red"
+
+[hostname]
+disabled = false
+format = "[판도라](bold maroon) in "
+ssh_only = false
+ssh_symbol = " "
+
+[directory]
+style = "bold peach"
+truncate_to_repo = true
+truncation_length = 0
+truncation_symbol = "레포: "
+read_only = ""
+
+[git_metrics]
+disabled = false
+added_style = 'bold green'
+format = '[+$added]($added_style)/[-$deleted]($deleted_style) '
+
+[sudo]
+disabled = false
+
+[git_status]
+ahead = "${count}"
+behind = "${count}"
+deleted = "x"
+diverged = "${ahead_count}${behind_count}"
+style = "text"
+
+[git_branch]
+symbol = " "
+style = "bold green"
+
+[nix_shell]
+format = 'via [$symbol(($name))]($style) '
+symbol = " "
+
+[cmd_duration]
+disabled = false
+style="bold flamingo"
+format = "took [$duration]($style)"
+show_milliseconds = true
+show_notifications = true
+min_time_to_notify = 30_000
+
+## SECOND LINE/ROW: Prompt
+[battery]
+charging_symbol = ""
+disabled = true
+discharging_symbol = ""
+full_symbol = ""
+
+[[battery.display]]
+disabled = false
+style = "bold red"
+threshold = 15
+
+[[battery.display]]
+disabled = true
+style = "bold peach"
+threshold = 50
+
+[[battery.display]]
+disabled = true
+style = "bold green"
+threshold = 90
+
+[status]
+disabled = false
+format = '[\[$symbol$status_common_meaning$status_signal_name$status_maybe_int\]]($style)'
+map_symbol = true
+pipestatus = true
+symbol = "✖"
+not_executable_symbol = ""
+not_found_symbol = ""
+sigint_symbol = "󰟾"
+signal_symbol = ""
+
+[os]
+disabled = false
+format = ' [$symbol]($style)'
+style = "bold mauve"
+
+[character]
+error_symbol = ""
+success_symbol = "❯(bold green)"
+
+# SYMBOLS
+[git_commit]
+tag_symbol = '  '
+
+[golang]
+symbol = " "
+
+[guix_shell]
+symbol = " "
+
+[haskell]
+symbol = " "
+
+[haxe]
+symbol = " "
+
+[hg_branch]
+symbol = " "
+
+[java]
+symbol = " "
+
+[julia]
+symbol = " "
+
+[kotlin]
+symbol = " "
+
+[lua]
+symbol = " "
+
+[memory_usage]
+symbol = "󰍛 "
+
+[meson]
+symbol = "󰔷 "
+
+[nim]
+symbol = "󰆥 "
+
+[nodejs]
+symbol = " "
+
+[ocaml]
+symbol = " "
+
+[os.symbols]
+Alpaquita = " "
+Alpine = " "
+AlmaLinux = " "
+Amazon = " "
+Android = " "
+Arch = " "
+Artix = " "
+CentOS = " "
+Debian = " "
+DragonFly = " "
+Emscripten = " "
+EndeavourOS = " "
+Fedora = " "
+FreeBSD = " "
+Garuda = "󰛓 "
+Gentoo = " "
+HardenedBSD = "󰞌 "
+Illumos = "󰈸 "
+Kali = " "
+Linux = " "
+Mabox = " "
+Macos = " "
+Manjaro = " "
+Mariner = " "
+MidnightBSD = " "
+Mint = " "
+NetBSD = " "
+NixOS = " "
+OpenBSD = "󰈺 "
+openSUSE = " "
+OracleLinux = "󰌷 "
+Pop = " "
+Raspbian = " "
+Redhat = " "
+RedHatEnterprise = " "
+RockyLinux = " "
+Redox = "󰀘 "
+Solus = "󰠳 "
+SUSE = " "
+Ubuntu = " "
+Unknown = " "
+Void = " "
+Windows = "󰍲 "
+
+[package]
+symbol = "󰏗 "
+
+[perl]
+symbol = " "
+
+[php]
+symbol = " "
+
+[pijul_channel]
+symbol = " "
+
+[python]
+symbol = " "
+
+[rlang]
+symbol = "󰟔 "
+
+[ruby]
+symbol = " "
+
+[rust]
+symbol = "󱘗 "
+
+[scala]
+symbol = " "
+
+[swift]
+symbol = " "
+
+[zig]
+symbol = " "
+
+[gradle]
+symbol = " "
