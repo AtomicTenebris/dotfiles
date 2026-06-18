@@ -54,7 +54,8 @@ Write-ModuleHeader "Create Common Directories"
 
 $Directories = @(
   "$HOME\.config",
-  "$HOME\Documents\PowerShell"
+  "$HOME\Documents\PowerShell",
+  "$HOME\Documents\WindowsPowerShell",
   "$HOME\workspace"
 )
 foreach ($Directory in $Directories) {
@@ -80,5 +81,38 @@ $env:Path = [System.Environment]::GetEnvironmentVariable(
 )
 
 Write-Host "[SUUCESS] PATH refreshed" -ForegroundColor Green
+
+Write-ModuleHeader "Configure NuGet Provider (PowerShellGet)"
+
+# Ensure TLS 1.2 (required for PSGallery on fresh Windows)
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+# Install NuGet provider silently (NO PROMPTS)
+if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
+
+    Write-Host "[INFO] Installing NuGet provider..." -ForegroundColor Yellow
+
+    Install-PackageProvider `
+        -Name NuGet `
+        -MinimumVersion 2.8.5.201 `
+        -Force `
+        -Scope CurrentUser `
+        -Confirm:$false `
+        -ErrorAction Stop | Out-Null
+
+    Write-Host "[SUCCESS] NuGet provider installed" -ForegroundColor Green
+}
+else {
+    Write-Host "[SUCCESS] NuGet provider already exists" -ForegroundColor Green
+}
+
+# Trust PSGallery to prevent Install-Module prompts
+Set-PSRepository `
+    -Name PSGallery `
+    -InstallationPolicy Trusted `
+    -ErrorAction SilentlyContinue
+
+Write-Host "[SUCCESS] PowerShell Gallery trusted" -ForegroundColor Green
+
 
 Write-Host "Prerequisites checks completed" -ForegroundColor Green
