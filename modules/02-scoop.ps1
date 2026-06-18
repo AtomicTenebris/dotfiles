@@ -8,6 +8,15 @@ if (-not (Get-Command scoop -ErrorAction SilentlyContinue)) {
   Invoke-RestMethod get.scoop.sh | Invoke-Expression -RunAsAdmin
 
 } 
+
+$env:Path = [System.Environment]::GetEnvironmentVariable(
+  'Path',
+  'Machine'
+) + ';' + [System.Environment]::GetEnvironmentVariable(
+  'Path',
+  'User'
+)
+
 Write-Host "Updating Scoop: $(scoop update)" 
 $Buckets = @(
   'main'
