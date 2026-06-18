@@ -26,6 +26,7 @@ Set-Item -Path Function:Install-Dotfiles -Value {
             'terminal'
             'vscode'
             'neovim'
+            'post-install'
         )
     )
 
@@ -93,47 +94,45 @@ Set-PSReadLineKeyHandler -Chord 'Ctrl+y' -Function Redo
 
 
 function Show-Help {
-    $title    = $PSStyle.Foreground.BrightMagenta
-    $section  = $PSStyle.Foreground.BrightBlue
-    $command  = $PSStyle.Foreground.BrightGreen
-    $desc     = $PSStyle.Foreground.BrightWhite
-    $accent   = $PSStyle.Foreground.BrightYellow
-    $dim      = $PSStyle.Foreground.BrightBlack
-    $reset    = $PSStyle.Reset
+    $title   = $PSStyle.Foreground.BrightMagenta
+    $section = $PSStyle.Foreground.BrightBlue
+    $command = $PSStyle.Foreground.BrightGreen
+    $desc    = $PSStyle.Foreground.BrightWhite
+    $accent  = $PSStyle.Foreground.BrightYellow
+    $dim     = $PSStyle.Foreground.BrightBlack
+    $reset   = $PSStyle.Reset
 
     Write-Host @"
 ${title}󰘳 PowerShell Profile Help${reset}
 ${dim}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${reset}
 
-${section}󰊢 Update${reset}
-  ${command}Update-Profile${reset}  ${accent}→${reset} ${desc}Updates the profile from a remote repository.${reset}
+${section}󰊢 Dotfiles${reset}
+${dim}────────────────────────────────────────────────────${reset}
+  ${command}Install-Dotfiles${reset}   ${accent}→${reset} ${desc}Install or update dotfiles${reset}
+  ${command}chr${reset}                ${accent}→${reset} ${desc}Open current directory in VS Code Insiders${reset}
 
 ${section}󰊢 Git Shortcuts${reset}
 ${dim}────────────────────────────────────────────────────${reset}
-  ${command}g${reset}                  ${accent}→${reset} ${desc}Changes to the GitHub directory${reset}
   ${command}ga${reset}                 ${accent}→${reset} ${desc}git add .${reset}
-  ${command}gcl <repo>${reset}         ${accent}→${reset} ${desc}git clone${reset}
-  ${command}gcom <message>${reset}     ${accent}→${reset} ${desc}add + commit${reset}
-  ${command}gpush${reset}         ${accent}→${reset} ${desc}git push${reset}
-  ${command}gpull${reset}              ${accent}→${reset} ${desc}git pull${reset}
   ${command}gs${reset}                 ${accent}→${reset} ${desc}git status${reset}
+  ${command}gpull${reset}              ${accent}→${reset} ${desc}git pull${reset}
+  ${command}gpush${reset}              ${accent}→${reset} ${desc}git push${reset}
+  ${command}gcl <repo>${reset}         ${accent}→${reset} ${desc}git clone <repo>${reset}
 
-${section}󰘴 System Shortcuts${reset}
+${section}󰘴 File & Directory${reset}
 ${dim}────────────────────────────────────────────────────${reset}
-  ${command}docs${reset}               ${accent}→${reset} ${desc}Documents folder${reset}
-  ${command}ff <name>${reset}          ${accent}→${reset} ${desc}Search files${reset}
-    ${command}grep <pattern> [path]${reset} ${accent}→${reset} ${desc}Search text${reset}
-  ${command}head <file>${reset}        ${accent}→${reset} ${desc}First lines${reset}
-    ${command}k9 <name>${reset}          ${accent}→${reset} ${desc}Kill process by name${reset}
-  ${command}ll${reset}                 ${accent}→${reset} ${desc}List files${reset}
-  ${command}mkcd <dir>${reset}         ${accent}→${reset} ${desc}Create + enter dir${reset}
-    ${command}pgrep <name>${reset}       ${accent}→${reset} ${desc}Find process by name${reset}
-    ${command}pkill <name>${reset}       ${accent}→${reset} ${desc}Stop process by name${reset}
-  ${command}sed <file> <find> <replace>${reset} ${accent}→${reset} ${desc}Replace text${reset}
-  ${command}touch <file>${reset}       ${accent}→${reset} ${desc}Create file${reset}
-  ${command}unzip <file>${reset}       ${accent}→${reset} ${desc}Extract zip${reset}
-  ${command}uptime${reset}             ${accent}→${reset} ${desc}System uptime${reset}
-  ${command}which <name>${reset}       ${accent}→${reset} ${desc}Locate command${reset}
+  ${command}touch <file>${reset}       ${accent}→${reset} ${desc}Create file or update timestamp${reset}
+  ${command}mkcd <dir>${reset}         ${accent}→${reset} ${desc}Create directory and enter it${reset}
+  ${command}head <file>${reset}        ${accent}→${reset} ${desc}Show first 10 lines${reset}
+  ${command}sed <file> <find> <replace>${reset}
+                           ${accent}→${reset} ${desc}Replace text in a file${reset}
+  ${command}which <command>${reset}    ${accent}→${reset} ${desc}Show command location${reset}
+
+${section}󰊢 Aliases${reset}
+${dim}────────────────────────────────────────────────────${reset}
+  ${command}code${reset}               ${accent}→${reset} ${desc}code-insiders${reset}
+  ${command}unzip${reset}              ${accent}→${reset} ${desc}Expand-Archive${reset}
+  ${command}grep${reset}               ${accent}→${reset} ${desc}Select-String${reset}
 
 ${dim}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${reset}
 "@
