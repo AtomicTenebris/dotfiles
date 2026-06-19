@@ -34,10 +34,12 @@
             "font": 
             {
                 "face": "Hack Nerd Font",
-                "size": 14
+                "size": 12
             },
+            "opacity": 20,
             "padding": "2",
-            "scrollbarState": "hidden"
+            "scrollbarState": "hidden",
+            "useAcrylic": true
         },
         "list": 
         [
@@ -93,19 +95,31 @@
             "yellow": "#F9E2AF"
         }
     ],
-    "themes": [{
-  "name": "Catppuccin Mocha",
-  "tab": {
-    "background": "#000000FF",
-    "showCloseButton": "always",
-    "unfocusedBackground": null
-  },
-  "tabRow": {
-    "background": "#181825FF",
-    "unfocusedBackground": "#11111BFF"
-  },
-  "window": {
-    "applicationTheme": "dark"
-  }
-}]
+    "themes": 
+    [
+        {
+            "name": "Catppuccin Mocha",
+            "tab": 
+            {
+                "background": "#000000FF",
+                "iconStyle": "default",
+                "showCloseButton": "always",
+                "unfocusedBackground": null
+            },
+            "tabRow": 
+            {
+                "background": "#181825FF",
+                "unfocusedBackground": "#11111BFF"
+            },
+            "window": 
+            {
+                "applicationTheme": "dark",
+                "experimental.rainbowFrame": false,
+                "frame": null,
+                "unfocusedFrame": null,
+                "useMica": false
+            }
+        }
+    ],
+    "useAcrylicInTabRow": true
 }
