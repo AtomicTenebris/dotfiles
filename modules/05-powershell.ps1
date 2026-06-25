@@ -110,10 +110,20 @@ foreach ($Module in $Modules) {
 
     Write-Host "[CHECK] $Module" -ForegroundColor Cyan
 
+    $CheckScript = @"
+if (Get-Module -ListAvailable -Name '$Module') {
+    'true'
+}
+"@
+
+    $CheckEncoded = [Convert]::ToBase64String(
+        [System.Text.Encoding]::Unicode.GetBytes($CheckScript)
+    )
+
     $Installed = & $Pwsh.Source `
         -NoProfile `
         -NonInteractive `
-        -Command "if (Get-Module -ListAvailable -Name '$Module') { 'true' }"
+        -EncodedCommand $CheckEncoded
 
     if ($Installed -eq 'true') {
         Write-Host "[SKIP] $Module already installed" -ForegroundColor DarkGray
@@ -122,19 +132,31 @@ foreach ($Module in $Modules) {
 
     Write-Host "[INSTALL] $Module" -ForegroundColor Yellow
 
+    $InstallScript = @"
+`$ErrorActionPreference = 'Stop'
+
+Install-Module `
+    -Name '$Module' `
+    -Scope CurrentUser `
+    -Repository PSGallery `
+    -Force `
+    -AllowClobber `
+    -SkipPublisherCheck `
+    -Confirm:`$false
+"@
+
+    $InstallEncoded = [Convert]::ToBase64String(
+        [System.Text.Encoding]::Unicode.GetBytes($InstallScript)
+    )
+
     & $Pwsh.Source `
         -NoProfile `
         -NonInteractive `
-        -Command "
-            Install-Module `
-                -Name '$Module' `
-                -Scope CurrentUser `
-                -Repository PSGallery `
-                -Force `
-                -AllowClobber `
-                -SkipPublisherCheck `
-                -Confirm:`$false
-        "
+        -EncodedCommand $InstallEncoded
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to install module: $Module"
+    }
 
     Write-Host "[DONE] $Module" -ForegroundColor Green
 }
