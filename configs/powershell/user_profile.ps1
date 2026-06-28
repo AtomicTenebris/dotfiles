@@ -139,3 +139,7 @@ ${dim}━━━━━━━━━━━━━━━━━━━━━━━━�
 }
 
 Invoke-Expression (&starship init powershell)
+
+if (Get-Command fastfetch -ErrorAction SilentlyContinue) {
+    fastfetch
+}
