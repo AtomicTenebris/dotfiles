@@ -1,7 +1,7 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-Write-ModuleHeader "Configure Powershell"
+Write-ModuleHeader "Configure PowerShell"
 
 # -------------------------------------------------
 # Paths
@@ -39,7 +39,7 @@ if (-not (Test-Path $UserProfile)) {
 }
 
 # -------------------------------------------------
-# Backup existing files
+# Backup existing profiles
 # -------------------------------------------------
 
 $BackupDir = New-BackupDirectory "powershell"
@@ -57,7 +57,7 @@ if (Test-Path $LegacyProfile) {
 }
 
 # -------------------------------------------------
-# Deploy bootstrap loader
+# Bootstrap loader
 # -------------------------------------------------
 
 $Bootstrap = @'
@@ -69,99 +69,33 @@ if (Test-Path $UserProfile) {
         . $UserProfile
     }
     catch {
-        Write-Host "[WARN] Failed to load user_profile.ps1: $_" -ForegroundColor Yellow
+        Write-Host "[WARN] Failed to load user_profile.ps1" -ForegroundColor Yellow
+        Write-Host $_ -ForegroundColor DarkYellow
     }
 }
 '@
 
-Set-Content -Path $PwshProfile -Value $Bootstrap -Force
-Set-Content -Path $LegacyProfile -Value $Bootstrap -Force
+Set-Content -Path $PwshProfile -Value $Bootstrap -Encoding UTF8 -Force
+Set-Content -Path $LegacyProfile -Value $Bootstrap -Encoding UTF8 -Force
 
 # -------------------------------------------------
 # Deploy user profile
 # -------------------------------------------------
 
+$SourceProfile = Join-Path $Global:DotfilesRoot "configs\powershell\user_profile.ps1"
+
+if (-not (Test-Path $SourceProfile)) {
+    throw "PowerShell profile not found: $SourceProfile"
+}
+
 Copy-Item `
-    -Path (Join-Path $Global:DotfilesRoot "configs\powershell\user_profile.ps1") `
+    -Path $SourceProfile `
     -Destination $UserProfile `
     -Force
 
-# -------------------------------------------------
-# Install PowerShell modules using pwsh
-# -------------------------------------------------
-
-$ModuleFile = Join-Path $Global:DotfilesRoot "configs\powershell\modules.txt"
-
-if (-not (Test-Path $ModuleFile)) {
-    throw "Module list not found: $ModuleFile"
-}
-
-$Modules = Get-Content $ModuleFile | Where-Object {
-    $_.Trim() -and -not $_.StartsWith('#')
-}
-
-$env:Path = [System.Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' +
-            [System.Environment]::GetEnvironmentVariable('Path', 'User')
-
-$Pwsh = Get-Command pwsh -ErrorAction SilentlyContinue
-
-if (-not $Pwsh) {
-    throw "PowerShell 7 (pwsh) is not installed."
-}
-
-foreach ($Module in $Modules) {
-
-    Write-Host "[CHECK] $Module" -ForegroundColor Cyan
-
-    $CheckScript = @"
-if (Get-Module -ListAvailable -Name '$Module') {
-    'true'
-}
-"@
-
-    $CheckEncoded = [Convert]::ToBase64String(
-        [System.Text.Encoding]::Unicode.GetBytes($CheckScript)
-    )
-
-    $Installed = & $Pwsh.Source `
-        -NoProfile `
-        -NonInteractive `
-        -EncodedCommand $CheckEncoded
-
-    if ($Installed -eq 'true') {
-        Write-Host "[SKIP] $Module already installed" -ForegroundColor DarkGray
-        continue
-    }
-
-    Write-Host "[INSTALL] $Module" -ForegroundColor Yellow
-
-    $InstallScript = @"
-`$ErrorActionPreference = 'Stop'
-
-Install-Module `
-    -Name '$Module' `
-    -Scope CurrentUser `
-    -Repository PSGallery `
-    -Force `
-    -AllowClobber `
-    -SkipPublisherCheck `
-    -Confirm:`$false
-"@
-
-    $InstallEncoded = [Convert]::ToBase64String(
-        [System.Text.Encoding]::Unicode.GetBytes($InstallScript)
-    )
-
-    & $Pwsh.Source `
-        -NoProfile `
-        -NonInteractive `
-        -EncodedCommand $InstallEncoded
-
-    if ($LASTEXITCODE -ne 0) {
-        throw "Failed to install module: $Module"
-    }
-
-    Write-Host "[DONE] $Module" -ForegroundColor Green
-}
-
-Write-Host "[SUCCESS] PowerShell configured (pwsh + WindowsPowerShell)" -ForegroundColor Green
+Write-Host "[SUCCESS] PowerShell configured successfully." -ForegroundColor Green
+Write-Host "Bootstrap profiles created:" -ForegroundColor DarkGray
+Write-Host "  • $PwshProfile" -ForegroundColor DarkGray
+Write-Host "  • $LegacyProfile" -ForegroundColor DarkGray
+Write-Host "User profile deployed to:" -ForegroundColor DarkGray
+Write-Host "  • $UserProfile" -ForegroundColor DarkGray
