@@ -6,7 +6,7 @@ Set-ExecutionPolicy Bypass -Scope Process -Force
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$RepoOwner = 'AtomicTenebris'
+$RepoOwner = '0xhealer'
 $RepoName  = 'dotfiles'
 
 $TempRoot = Join-Path $env:TEMP ("$RepoName-" + [guid]::NewGuid())
