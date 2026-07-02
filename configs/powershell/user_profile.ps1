@@ -1,7 +1,49 @@
 # Import Module
-Import-Module -Name Terminal-Icons
-Import-Module -Name PSFzf
-Import-Module -Name PSReadLine
+function Import-RequiredModule {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Name
+    )
+
+    # Already loaded
+    if (Get-Module -Name $Name) {
+        return
+    }
+
+    # Installed
+    if (Get-Module -ListAvailable -Name $Name) {
+        Import-Module $Name -ErrorAction Stop
+        return
+    }
+
+    Write-Host "[INSTALL] Installing $Name..." -ForegroundColor Yellow
+
+    Install-Module `
+        -Name $Name `
+        -Scope CurrentUser `
+        -Repository PSGallery `
+        -Force `
+        -AllowClobber `
+        -SkipPublisherCheck `
+        -ErrorAction Stop
+
+    Import-Module $Name -ErrorAction Stop
+
+    Write-Host "[DONE] $Name" -ForegroundColor Green
+}
+
+@(
+    'Terminal-Icons'
+    'PSFzf'
+    'PSReadLine'
+    'CompletionPredictor'
+    'PSScriptAnalyzer'
+    'PSWindowsUpdate'
+    'PSFzf'
+) | ForEach-Object {
+    Import-RequiredModule $_
+}
 
 
 Set-Alias -Name code -Value code-insiders
