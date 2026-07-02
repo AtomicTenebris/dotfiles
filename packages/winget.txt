@@ -6,10 +6,12 @@ Microsoft.PowerToys
 Starship.Starship
 VideoLAN.VLC
 Proton.ProtonDrive
-Spotify.Spotify
 Brave.Brave
 Foxit.FoxitReader
 Docker.DockerDesktop
 Obsidian.Obsidian
 RevoUninstaller.RevoUninstaller
 Tailscale.Tailscale
+Microsoft.VCRedist.2015+.x64
+Google.GoogleDrive
+Rustlang.Rust.MSVC
