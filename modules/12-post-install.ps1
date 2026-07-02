@@ -203,12 +203,12 @@ foreach ($Pattern in $Packages) {
 }
 
 # -----------------------------------------------------------------------------
-# Copilot - disable AND remove
+# Copilot - disable AND remove completely
 # -----------------------------------------------------------------------------
 
-Write-Host "[REMOVE] Windows Copilot" -ForegroundColor Yellow
+Write-Host "[REMOVE] Windows Copilot completely" -ForegroundColor Yellow
 
-# Policy: block Copilot from running/reinstalling
+# 1. System-wide Policy Blocks
 try {
     if (-not (Test-Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot")) {
         New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot" -Force | Out-Null
@@ -219,8 +219,44 @@ catch {
     Write-Warning "Failed to disable Windows Copilot policy - $($_.Exception.Message)"
 }
 
-# Hide Copilot button from taskbar for current user
+# 2. User-specific Policy Blocks (Ensures it stays dead for the current user)
 try {
-    $AdvPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
-    if (-not (Test-Path $AdvPath)) {
-        New-Item -Path $AdvPath -Force |
+    $PolicyPath = "HKCU:\Software\Policies\Microsoft\Windows\WindowsCopilot"
+    if (-not (Test-Path $PolicyPath)) {
+        New-Item -Path $PolicyPath -Force | Out-Null
+    }
+    New-ItemProperty -Path $PolicyPath -Name TurnOffWindowsCopilot -PropertyType DWord -Value 1 -Force | Out-Null
+}
+catch {
+    Write-Warning "Failed to set user-level Copilot policy - $($_.Exception.Message)"
+}
+
+# 3. Completely Uninstall the Copilot App Package
+$CopilotPattern = "*Copilot*"
+
+Get-AppxPackage -AllUsers -ErrorAction SilentlyContinue |
+    Where-Object Name -like $CopilotPattern |
+    ForEach-Object {
+        try {
+            Remove-AppxPackage -Package $_.PackageFullName -AllUsers -ErrorAction Stop
+            Write-Host "[REMOVE] Removed Appx Package: $($_.Name)"
+        }
+        catch {
+            Write-Warning "Failed to remove Copilot package $($_.Name) - $($_.Exception.Message)"
+        }
+    }
+
+# 4. Remove Provisioned Package (Prevents it from reinstalling during Windows Updates)
+Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue |
+    Where-Object DisplayName -like $CopilotPattern |
+    ForEach-Object {
+        try {
+            Remove-AppxProvisionedPackage -Online -PackageName $_.PackageName -ErrorAction Stop | Out-Null
+            Write-Host "[REMOVE] Removed Provisioned Package: $($_.DisplayName)"
+        }
+        catch {
+            Write-Warning "Failed to remove provisioned Copilot package $($_.DisplayName) - $($_.Exception.Message)"
+        }
+    }
+
+Write-Host "[SUCCESS] Windows Copilot has been completely removed and disabled" -ForegroundColor Green
