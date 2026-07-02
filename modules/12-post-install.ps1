@@ -14,20 +14,49 @@ $Features = @(
     "VirtualMachinePlatform"
 )
 
+$RestartRequired = $false
+
 foreach ($Feature in $Features) {
     $State = (Get-WindowsOptionalFeature -Online -FeatureName $Feature).State
-    if ($State -ne "Enabled") {
-        Write-Host "[ENABLE] $Feature"
-        dism.exe /Online /Enable-Feature "/FeatureName:$Feature" /All /NoRestart | Out-Null
-    } else {
+
+    if ($State -eq "Enabled") {
         Write-Host "[SKIP] $Feature already enabled"
+        continue
     }
+
+    Write-Host "[ENABLE] $Feature"
+
+    Enable-WindowsOptionalFeature `
+        -Online `
+        -FeatureName $Feature `
+        -All `
+        -NoRestart | Out-Null
+
+    $RestartRequired = $true
 }
 
-try { wsl --status *> $null } catch { wsl --install --no-distribution *> $null }
-try { wsl --set-default-version 2 | Out-Null } catch {}
+# Configure WSL only if no reboot is pending
+if (-not $RestartRequired) {
+    if (Get-Command wsl.exe -ErrorAction SilentlyContinue) {
+        try {
+            Write-Host "[CONFIG] Setting WSL2 as the default version"
+            wsl --set-default-version 2 | Out-Null
+        }
+        catch {
+            Write-Warning "Failed to set the default WSL version to 2."
+        }
+    }
+    else {
+        Write-Warning "wsl.exe is not available. A reboot may be required before WSL can be configured."
+    }
 
-Write-Host "[SUCCESS] WSL2 configured" -ForegroundColor Green
+    Write-Host "[SUCCESS] WSL2 configured" -ForegroundColor Green
+}
+else {
+    Write-Host ""
+    Write-Host "[INFO] Windows features have been enabled." -ForegroundColor Yellow
+    Write-Host "[INFO] Restart Windows and rerun the installer to complete WSL2 configuration." -ForegroundColor Yellow
+}
 
 # -----------------------------------------------------------------------------
 # OneDrive
