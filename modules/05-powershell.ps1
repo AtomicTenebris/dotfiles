@@ -100,6 +100,9 @@ $Modules = Get-Content $ModuleFile | Where-Object {
     $_.Trim() -and -not $_.StartsWith('#')
 }
 
+$env:Path = [System.Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' +
+            [System.Environment]::GetEnvironmentVariable('Path', 'User')
+
 $Pwsh = Get-Command pwsh -ErrorAction SilentlyContinue
 
 if (-not $Pwsh) {
