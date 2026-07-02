@@ -182,22 +182,26 @@ foreach ($Pattern in $Packages) {
     Get-AppxPackage -AllUsers -ErrorAction SilentlyContinue |
         Where-Object Name -like $Pattern |
         ForEach-Object {
+            $PName = $_.Name
+            $PFullName = $_.PackageFullName
             try {
-                Remove-AppxPackage -Package $_.PackageFullName -AllUsers -ErrorAction Stop
+                Remove-AppxPackage -Package $PFullName -AllUsers -ErrorAction Stop
             }
             catch {
-                Write-Warning "Failed to remove package $($_.Name) - $($_.Exception.Message)"
+                Write-Warning "Failed to remove package $PName - $($_.Exception.Message)"
             }
         }
 
     Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue |
         Where-Object DisplayName -like $Pattern |
         ForEach-Object {
+            $PName = $_.DisplayName
+            $PPackageName = $_.PackageName
             try {
-                Remove-AppxProvisionedPackage -Online -PackageName $_.PackageName -ErrorAction Stop | Out-Null
+                Remove-AppxProvisionedPackage -Online -PackageName $PPackageName -ErrorAction Stop | Out-Null
             }
             catch {
-                Write-Warning "Failed to remove provisioned package $($_.DisplayName) - $($_.Exception.Message)"
+                Write-Warning "Failed to remove provisioned package $PName - $($_.Exception.Message)"
             }
         }
 }
@@ -219,7 +223,7 @@ catch {
     Write-Warning "Failed to disable Windows Copilot policy - $($_.Exception.Message)"
 }
 
-# 2. User-specific Policy Blocks (Ensures it stays dead for the current user)
+# 2. User-specific Policy Blocks
 try {
     $PolicyPath = "HKCU:\Software\Policies\Microsoft\Windows\WindowsCopilot"
     if (-not (Test-Path $PolicyPath)) {
@@ -237,25 +241,29 @@ $CopilotPattern = "*Copilot*"
 Get-AppxPackage -AllUsers -ErrorAction SilentlyContinue |
     Where-Object Name -like $CopilotPattern |
     ForEach-Object {
+        $PName = $_.Name
+        $PFullName = $_.PackageFullName
         try {
-            Remove-AppxPackage -Package $_.PackageFullName -AllUsers -ErrorAction Stop
-            Write-Host "[REMOVE] Removed Appx Package: $($_.Name)"
+            Remove-AppxPackage -Package $PFullName -AllUsers -ErrorAction Stop
+            Write-Host "[REMOVE] Removed Appx Package: $PName"
         }
         catch {
-            Write-Warning "Failed to remove Copilot package $($_.Name) - $($_.Exception.Message)"
+            Write-Warning "Failed to remove Copilot package $PName - $($_.Exception.Message)"
         }
     }
 
-# 4. Remove Provisioned Package (Prevents it from reinstalling during Windows Updates)
+# 4. Remove Provisioned Package
 Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue |
     Where-Object DisplayName -like $CopilotPattern |
     ForEach-Object {
+        $PName = $_.DisplayName
+        $PPackageName = $_.PackageName
         try {
-            Remove-AppxProvisionedPackage -Online -PackageName $_.PackageName -ErrorAction Stop | Out-Null
-            Write-Host "[REMOVE] Removed Provisioned Package: $($_.DisplayName)"
+            Remove-AppxProvisionedPackage -Online -PackageName $PPackageName -ErrorAction Stop | Out-Null
+            Write-Host "[REMOVE] Removed Provisioned Package: $PName"
         }
         catch {
-            Write-Warning "Failed to remove provisioned Copilot package $($_.DisplayName) - $($_.Exception.Message)"
+            Write-Warning "Failed to remove provisioned Copilot package $PName - $($_.Exception.Message)"
         }
     }
 
