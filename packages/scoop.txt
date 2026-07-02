@@ -14,9 +14,9 @@ gcc
 gdb
 adb
 lazygit
-btop
 jq
 spotify
+fastfetch
 AnonymousPro-NF
 FiraCode-NF
 Hack-NF
